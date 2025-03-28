@@ -37,7 +37,7 @@ def detectSquareContour(contour,emptyImage,name):
         aspect_ratio = float(w) / h
         cnt_len = cv2.arcLength(cont, True)
         cnt = cv2.approxPolyDP(cont, 0.02*cnt_len, True)
-        if len(cnt) == 4 and cv2.contourArea(cnt) > 100 and abs(aspect_ratio-1) < 0.1:
+        if len(cnt) == 4 and cv2.contourArea(cnt) > 100 and abs(aspect_ratio-1) < 0.05:
             squares.append(cont)
     cv2.drawContours(image=emptyImage, contours=squares, contourIdx=-1, color=(0, 255, 0), thickness=1, lineType=cv2.LINE_AA)
     cv2.imwrite(name+'squares.jpg', emptyImage)
