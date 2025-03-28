@@ -25,13 +25,21 @@ def parseContours(filename):
     cv2.imwrite(filename+'contours.jpg', contourImage)
     filesGenerated.append(filename+'contours.jpg')
     #get the specific contours that are square
-    detectSquareContour(contour=contours)
+    detectSquareContour(contour=contours,emptyImage = np.zeros_like(image1),name = filename)
     
     
-def detectSquareContour(contour):
-    print("To do you nasty boo")
-    # go through each contour found and use cv2.approxPolyDP(),
-    # save the square ones to new list and save that image
+def detectSquareContour(contour,emptyImage,name):
+    #currently gets any 4 sided polygon
+    squares = []
+    for cont in contour:
+        cnt_len = cv2.arcLength(cont, True)
+        cnt = cv2.approxPolyDP(cont, 0.02*cnt_len, True)
+        if len(cnt) == 4:
+            squares.append(cont)
+    cv2.drawContours(image=emptyImage, contours=squares, contourIdx=-1, color=(0, 255, 0), thickness=1, lineType=cv2.LINE_AA)
+    cv2.imwrite(name+'squares.jpg', emptyImage)
+    filesGenerated.append(name+'squares.jpg')
+        
     
 
 def cleanUp():
