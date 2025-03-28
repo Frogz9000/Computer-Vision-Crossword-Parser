@@ -26,10 +26,11 @@ def parseContours(filename):
     cv2.imwrite(filename+'contours.jpg', contourImage)
     filesGenerated.append(filename+'contours.jpg')
     #get the specific contours that are square
-    detectSquareContour(contour=contours,emptyImage = np.zeros_like(image1),name = filename)
+    detectSquareContour(contour=contours,Image = image1,name = filename)
     
     
-def detectSquareContour(contour,emptyImage,name):
+def detectSquareContour(contour,Image,name):
+    emptyImage = np.zeros_like(Image)
     squares = []
     for cont in contour:
         x, y, w, h = cv2.boundingRect(cont)
@@ -42,8 +43,9 @@ def detectSquareContour(contour,emptyImage,name):
     cv2.drawContours(image=emptyImage, contours=squares, contourIdx=-1, color=(0, 255, 0), thickness=1, lineType=cv2.LINE_AA)
     cv2.imwrite(name+'squares.jpg', emptyImage)
     filesGenerated.append(name+'squares.jpg')
-        
-    
+    cv2.drawContours(image=Image, contours=squares, contourIdx=-1, color=(0, 255, 0), thickness=1, lineType=cv2.LINE_AA)
+    cv2.imwrite(name+'origin+squares.jpg', Image)
+    filesGenerated.append(name+'origin+squares.jpg')
 
 def cleanUp():
     for file in filesGenerated:
