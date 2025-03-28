@@ -1,3 +1,5 @@
+#references: https://learnopencv.com/contour-detection-using-opencv-python-c/
+
 import cv2
 import os
 import numpy as np
