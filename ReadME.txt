@@ -11,3 +11,9 @@ Take the information parsed from the image and export it to a seperate GUI type 
 
 Stretch Crazy goal:
 Have the digital version get solved with ML to have a crossword solver as well (since it would be funny to spoil a crossword puzzle with an app)
+
+package import list:
+pip install -U scikit-image
+pip install --upgrade imutils
+pip install opencv-python
+pip install numpy
