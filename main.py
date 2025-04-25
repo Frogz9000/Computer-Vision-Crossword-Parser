@@ -6,7 +6,6 @@ import cv2
 import cv2.typing
 import numpy as np
 from pathlib import Path
-from matplotlib import pyplot as plt
 
 Image = cv2.typing.MatLike
 Contour = cv2.typing.MatLike
