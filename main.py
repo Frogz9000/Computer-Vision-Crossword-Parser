@@ -6,6 +6,7 @@ import cv2
 import cv2.typing
 import numpy as np
 from pathlib import Path
+from matplotlib import pyplot as plt
 
 Image = cv2.typing.MatLike
 Contour = cv2.typing.MatLike
@@ -32,7 +33,7 @@ def try_square_approximation(contour: Contour) -> Union[Contour, None]:
 
 
 def draw_contours(image: Image, contours: Sequence[Contour]) -> None:
-    cv2.drawContours(image, contours, contourIdx=-1, color=(0, 255, 0), thickness=1, lineType=cv2.LINE_AA)
+    cv2.drawContours(image, contours, contourIdx=-1, color=(255, 255, 255), thickness=1, lineType=cv2.LINE_AA)
 
 
 def output_image(path: Path, image: Image):
@@ -75,6 +76,8 @@ def main():
             list.copy(square_contours)
         ))
 
+        max_width = max([cv2.arcLength(square, True) / 4 for square in square_contours])
+
         squares_image = np.zeros_like(image)
         draw_contours(squares_image, square_contours)
         output_image(generated_root.joinpath(f"{path.stem}-squares.jpg"), squares_image)
@@ -86,25 +89,35 @@ def main():
         # Create a new image to store the average square
         # It's more like a sum of all squares cause I don't ever divide them
 
-        # This formula looks sus, but trust
-        average_square_image_width_half = int(median_width * 0.75)
-        average_square_image = np.zeros((2 * average_square_image_width_half, 2 * average_square_image_width_half, 3))
+        kernel_width_half = int(max_width * 0.5 + 3)
+        kernel: Image = np.zeros((2 * kernel_width_half, 2 * kernel_width_half, 3), dtype=np.float64)
 
         for square in square_contours:
             x, y, w, h = cv2.boundingRect(square)
             center_x, center_y = x + w // 2, y + h // 2
             square_image = np.zeros_like(image)
             draw_contours(square_image, [square])
-            x1, y1 = center_x - average_square_image_width_half, center_y - average_square_image_width_half
-            x2, y2 = center_x + average_square_image_width_half, center_y + average_square_image_width_half
-            cropped = square_image[y1:y2,x1:x2]
+            x1, y1 = center_x - kernel_width_half, center_y - kernel_width_half
+            x2, y2 = center_x + kernel_width_half, center_y + kernel_width_half
+            cropped = contours_image[y1:y2,x1:x2]
             try:
-                average_square_image = average_square_image + cropped
+                kernel += cropped
             except ValueError:
                 print(f"There's a square too close to the edge of the {path.absolute()} image. That's fine though, we'll just ignore it.")
                 continue
 
-        output_image(generated_root.joinpath(f"{path.stem}-average-square.jpg"), average_square_image)
+        # Normalize the average square image
+        kernel = 2 * kernel / len(square_contours)
+        kernel = np.clip(kernel, 0, 255)
+        kernel = (kernel - kernel.min()) / (kernel.max() - kernel.min()) * 255
+        kernel[kernel == 0] = - 1024
+        output_image(generated_root.joinpath(f"{path.stem}-kernel.jpg"), kernel)
+        
+        convolved_image = cv2.filter2D(contours_image, -1, kernel / 255 / 255)
+        output_image(generated_root.joinpath(f"{path.stem}-convolved.jpg"), convolved_image)
+
+        _, points_image = cv2.threshold(convolved_image, thresh=np.percentile(convolved_image, 99.7), maxval=255, type=cv2.THRESH_BINARY)
+        output_image(generated_root.joinpath(f"{path.stem}-points.jpg"), points_image)
 
 
 if __name__ == "__main__":
