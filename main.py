@@ -6,6 +6,8 @@ import cv2
 import cv2.typing
 import numpy as np
 from pathlib import Path
+import pdf2image
+from math import floor
 
 Image = cv2.typing.MatLike
 Contour = cv2.typing.MatLike
@@ -39,14 +41,22 @@ def output_image(path: Path, image: Image):
     cv2.imwrite(str(path.absolute()), image)
 
 
+def read_image(path: Path) -> Union[Image, None]:
+    if path.suffix == '.pdf':
+        return np.asarray(pdf2image.convert_from_path(str(path.absolute()), dpi=300)[0])
+    else:
+        return cv2.imread(str(path.absolute()))
+
+
 def main():
     assets_root = Path('assets/')
     generated_root = Path('generated/')
+    project_assets_root = Path('AndroidAppDev/app/src/main/assets/')
 
     generated_root.mkdir(exist_ok=True)
 
     for path in assets_root.iterdir():
-        image = cv2.imread(str(path.absolute()))
+        image = read_image(path.absolute())
 
         if image is None:
             print(f"Error: File {path.absolute()} was not able to be read")
@@ -56,7 +66,6 @@ def main():
 
         contours_image = np.zeros_like(image)
         draw_contours(contours_image, contours)
-        output_image(generated_root.joinpath(f"{path.stem}-contours.jpg"), contours_image)
 
         square_contours = list(filter(
             lambda x: x is not None,
@@ -71,19 +80,11 @@ def main():
 
         # Filter out squares of the wrong size
         square_contours: List[Contour] = list(filter(
-            lambda x: abs(median_width / (cv2.arcLength(x, True) / 4) - 1) < 0.10,
+            lambda x, w=median_width: abs(w / (cv2.arcLength(x, True) / 4) - 1) < 0.10,
             list.copy(square_contours)
         ))
 
         max_width = max([cv2.arcLength(square, True) / 4 for square in square_contours])
-
-        squares_image = np.zeros_like(image)
-        draw_contours(squares_image, square_contours)
-        output_image(generated_root.joinpath(f"{path.stem}-squares.jpg"), squares_image)
-
-        both_image = np.copy(image)
-        draw_contours(both_image, square_contours)
-        output_image(generated_root.joinpath(f"{path.stem}-origin+squares.jpg"), both_image)
 
         # Create a new image to store the average square
         # It's more like a sum of all squares cause I don't ever divide them
@@ -110,13 +111,64 @@ def main():
         kernel = np.clip(kernel, 0, 255)
         kernel = (kernel - kernel.min()) / (kernel.max() - kernel.min()) * 255
         kernel[kernel == 0] = - 1024
-        output_image(generated_root.joinpath(f"{path.stem}-kernel.jpg"), kernel)
         
         convolved_image = cv2.filter2D(contours_image, -1, kernel / 255 / 255)
-        output_image(generated_root.joinpath(f"{path.stem}-convolved.jpg"), convolved_image)
 
         _, points_image = cv2.threshold(convolved_image, thresh=np.percentile(convolved_image, 99.7), maxval=255, type=cv2.THRESH_BINARY)
-        output_image(generated_root.joinpath(f"{path.stem}-points.jpg"), points_image)
+
+        # Create a new kernel that has a dot in the middle
+        kernel2 = np.zeros((2 * kernel_width_half, 2 * kernel_width_half, 3), dtype=np.float64)
+        kernel2[kernel_width_half-2:kernel_width_half+2, kernel_width_half-2:kernel_width_half+2] = 255
+        kernel2 = cv2.blur(kernel2, (5, 5))
+        kernel2 = (kernel2 - kernel2.min()) / (kernel2.max() - kernel2.min()) * 255
+        kernel2[kernel2 == 0] = -255
+
+        convolved_image2 = cv2.filter2D(convolved_image, -1, kernel2 / 255 / 255)
+        convolved_image2: Image = (convolved_image2 - convolved_image2.min()) / (convolved_image2.max() - convolved_image2.min()) * 255
+
+        # Find all the black dots in the image
+        # and create a mask for them
+
+        _, black_dots = cv2.threshold(image, thresh=10, maxval=255, type=cv2.THRESH_BINARY)
+
+        # Multiply the results for the best of both worlds
+        product = convolved_image2 * points_image / 255
+        product = cv2.threshold(product, thresh=0, maxval=255, type=cv2.THRESH_BINARY)[1]
+        product *= black_dots / 255
+
+        product = product.astype(np.uint8)
+
+        dots = parse_contours(product)
+
+        leftmost = min([cv2.boundingRect(dot)[0] for dot in dots])
+        rightmost = max([cv2.boundingRect(dot)[0] for dot in dots])
+        topmost = min([cv2.boundingRect(dot)[1] for dot in dots])
+        bottommost = max([cv2.boundingRect(dot)[1] for dot in dots])
+
+        product[topmost:bottommost, leftmost:rightmost] = 255
+
+        width = round(1 + (rightmost - leftmost) / (median_width + 2))
+        height = round(1 + (bottommost - topmost) / (median_width + 2))
+
+        grid = np.zeros((height, width), dtype=np.uint8)
+
+        for dot in dots:
+            x, y, _, _ = cv2.boundingRect(dot)
+            offset_x = x - leftmost
+            offset_y = y - topmost
+            grid[round((height - 1) * offset_y / (bottommost - topmost))][round((width - 1) * offset_x / (rightmost - leftmost))] = 255
+        
+        output_image(generated_root.joinpath(f"{path.stem}-grid.jpg"), grid)
+
+        with open(project_assets_root.joinpath(f"{path.stem}-grid.txt"), 'w') as f:
+            f.truncate(0)
+            f.write(f"{width} {height}\n")
+            grid_str = ','.join([('O' if cell == 255 else 'X') for cell in grid.flatten()])
+            f.write(f'{grid_str}\n')
+            f.write("ACROSS\n")
+            f.write("END_ACROSS\n")
+            f.write("DOWN\n")
+            f.write("END_DOWN\n")
 
 
 if __name__ == "__main__":
