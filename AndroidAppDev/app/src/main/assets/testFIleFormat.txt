@@ -1,0 +1,13 @@
+3 3
+123X4XX56
+ACROSS
+1: Donkey Nickname
+4: Doctor's command, "say..."
+5: 3.14159265358979323846264338..
+END_ACROSS
+DOWN
+1: Indefinite Article
+2: Tree Blood
+3: Half of 8
+6: Best Pronoun
+END_DOWN
