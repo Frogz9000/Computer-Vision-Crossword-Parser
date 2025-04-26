@@ -12,8 +12,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Button
@@ -42,7 +44,9 @@ import androidx.compose.ui.unit.dp
 import com.example.crosswordandroidapp.ui.theme.CrosswordAndroidAppTheme
 import java.util.HashMap
 import androidx.navigation.NavController
+import androidx.navigation.NavType
 import androidx.navigation.compose.*
+import androidx.navigation.navArgument
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -53,6 +57,19 @@ class MainActivity : ComponentActivity() {
                 NavHost(navController = navController, startDestination = "startScreen"){
                     composable("startScreen") { StartScreen(navController) }
                     composable("loadScreen") { LoadScreen(navController) }
+                    composable(
+                        route = "crosswordScreen/{fileName}",
+                        arguments = listOf(navArgument("fileName") {type = NavType.StringType})
+                    ){backStackEntry ->
+                        val context = LocalContext.current
+                        val fileName = backStackEntry.arguments?.getString("fileName") ?: ""
+
+                        CrosswordScreen(
+                            navController = navController,
+                            fileName = fileName,
+                            context = context
+                        )
+                    }
                 }
             }
         }
@@ -160,19 +177,34 @@ fun LoadScreen(navController: NavController){
             Button(onClick = {navController.navigate("startScreen")}, modifier = Modifier.padding(8.dp)) {
                 Text("Back")
             }
-            Button(onClick = {/*TODO*/}, modifier = Modifier.padding(8.dp)) {
+            Button(onClick = {navController.navigate("crosswordScreen/$selectedOptionText")}, modifier = Modifier.padding(8.dp)) {
                 Text("Begin")
             }
         }
     }
 }
 
-//TODO need wrapper to do naveController?
 @Composable
-fun CrosswordScreen(navController: NavController, fileName: String){
-    val context = LocalContext.current
-    val crossword = parseCrosswordFile(context,fileName)
+fun CrosswordScreen(navController: NavController, fileName: String, context: Context){
+
+    val crossword = remember(fileName) {parseCrosswordFile(context,fileName)}
     //TODO process object into image, worry about intractability later
+    Column(
+        modifier = Modifier.fillMaxSize().padding(64.dp)
+    ) {
+        Text("Puzzle: ${fileName.split(".")[0]}")
+        Text("Row = ${crossword.row} Col = ${crossword.col}")
+        Spacer(modifier = Modifier.height(16.dp))
+
+        //Generate square as text boxes?
+
+        Text("Grid data stored:\n ${crossword.printGrid()}")
+        Text("Across Clues: ${crossword.getCluesAcross()}")
+        Text("Down Clues: ${crossword.getCluesAcross()}")
+
+        Spacer(modifier = Modifier.weight(1f))
+        Button(onClick = {navController.navigate("loadScreen")}) { Text("Quit") }
+    }
 }
 
 fun parseCrosswordFile(context: Context ,fileName: String): Crossword {
