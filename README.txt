@@ -15,3 +15,5 @@ pip install -U scikit-image
 pip install --upgrade imutils
 pip install opencv-python
 pip install numpy
+pip install kivy
+pip install buildozer
