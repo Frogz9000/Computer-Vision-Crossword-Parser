@@ -1,0 +1,4 @@
+{
+    "java.compile.nullAnalysis.mode": "automatic",
+    "cmake.sourceDirectory": "C:/Users/samue/PythonProjects/CrosswordCV/Computer-Vision-Crossword-Parser/Flutter/crossword_app/windows"
+}
