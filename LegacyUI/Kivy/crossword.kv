@@ -1,0 +1,25 @@
+#:kivy 1.0.9
+
+<IntroScreen>:
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            text: 'Crossword Game'
+        Button:
+            text: 'Load'
+            on_press:
+                root.manager.transition.direction = 'left'
+                root.manager.current = 'load'
+        Button:
+            text: 'Scan'
+
+<LoadScreen>:
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            text: 'Crossword Game'
+        Button:
+            text: 'Back'
+            on_press:
+                root.manager.transition.direction = 'right'
+                root.manager.current = 'intro'
