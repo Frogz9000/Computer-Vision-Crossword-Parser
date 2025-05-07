@@ -1,4 +1,5 @@
-import 'package:crossword_app/src/Screens/load_crossword_screen.dart';
+import 'camera_screen.dart';
+import 'load_crossword_screen.dart';
 import 'package:flutter/material.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -18,7 +19,10 @@ class HomeScreen extends StatelessWidget {
         const Text('Temp Home Page'),
         TextButton(onPressed: () {
           Navigator.push(context, MaterialPageRoute(builder: (context) => LoadScreen()));
-        }, child: const Text("Load"))
+        }, child: const Text("Load")),
+        TextButton(onPressed: () {
+          Navigator.push(context, MaterialPageRoute(builder: (context) => CameraScreen()));
+        }, child: const Text("Capture Crossword"))
         ],
       ),
     );

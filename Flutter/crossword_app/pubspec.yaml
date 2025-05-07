@@ -12,6 +12,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_doc_scanner: ^0.0.16
   flutter_localizations:
     sdk: flutter
   tuple: ^2.0.2

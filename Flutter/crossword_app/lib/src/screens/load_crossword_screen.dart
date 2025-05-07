@@ -1,4 +1,5 @@
-import 'package:crossword_app/src/screens/play_crossword_screen.dart';
+import 'play_crossword_screen.dart';
+import 'home_screen.dart';
 import 'package:flutter/material.dart';
 
 class LoadScreen extends StatelessWidget {
@@ -18,7 +19,10 @@ class LoadScreen extends StatelessWidget {
         const Text('Temp Load Page'),
         TextButton(onPressed: () {
           Navigator.push(context, MaterialPageRoute(builder: (context) => PlayScreen()));
-        }, child: const Text("Play"))
+        }, child: const Text("Play")),
+        TextButton(onPressed: () {
+          Navigator.push(context, MaterialPageRoute(builder: (context) => HomeScreen()));
+        }, child: const Text("Back"))
         ],
       ),
     );

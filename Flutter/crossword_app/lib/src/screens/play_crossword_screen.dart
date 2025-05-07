@@ -1,4 +1,4 @@
-import 'package:crossword_app/src/screens/load_crossword_screen.dart';
+import 'load_crossword_screen.dart';
 import 'package:flutter/material.dart';
 
 class PlayScreen extends StatelessWidget {
